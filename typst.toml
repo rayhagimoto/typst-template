@@ -1,0 +1,5 @@
+[package]
+name = "templates"
+version = "1.0.0"
+entrypoint = "lib.typ"
+description = "An example package."
