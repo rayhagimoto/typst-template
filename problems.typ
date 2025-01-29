@@ -7,114 +7,130 @@
 #import "@preview/ctheorems:1.1.3": *
 #import "utils.typ" : cyan, border-color 
 
-// Initialize state for solutions and questions
-#let solutions = state("solutions", ())
-#let questions = state("questions", (:))
-
-// Question box environment definition
-#let question = thmbox(
+// Question and answer function
+#let question(..args, long:true, fill: cyan, stroke-paint: border-color, label: none) = {
+  // This function expects either one or two args
+  // First arg is always interpreted as question
+  // Second arg is interpreted as the solution to that question
+  // both args should be content types
+  
+  let qbox = thmbox(
   "problem",
   "Problem",
-  fill: cyan,
-  bodyfmt: body => context {
-    let loc = here() // Save the location of the current question
-    let solution_link = [] // Placeholder for a link to the solution
-    let tc = thmcounters.get().at("latest") // short for thmcounter
-    let number = numbering("1.1", ..tc)
-
-    // Update the questions state with the new question
-    questions.update(existing => existing + ("problem" + number: loc,))
-
-    // Check if there is a solution linked to this question
-    let solution_label = label("solution" + number)
-    let q = query(selector(solution_label))
-    if q.len() > 0 {
-      let loc = q.first().location() // Retrieve solution location
-      solution_link = align(center)[#link(loc)[_Solution on page #loc.page() _]]
-    }
-    [ 
-      #body
-      #solution_link
-    ]
-  },
+  fill: fill,
+  bodyfmt: body => [#body],
   stroke: (left: stroke(
-      paint: border-color,
+      paint: stroke-paint,
       thickness: 2.5pt
     )),
   padding: (top: 0.0em, bottom: 0.0em),
   spacing: 0.0em,
 )
 
-// Solution box environment definition
-#let solution(
-  ..args,
-  body,
-  title: auto,
-  numbering_format: "1.1",
-  namefmt: x => [(#x)],
-  titlefmt: strong,
-  bodyfmt: x => x,
-  separator: [#h(0.1em): #h(0.2em)],
-  padding: (top: 0.5em, bottom: 0.5em),
-) = context {
-  let problem_counter = thmcounters.get().at("counters").at("problem")
-  let problem_number = numbering(numbering_format, ..problem_counter)
-  let solution_title = titlefmt([Solution #problem_number])
-  let solution_label = label("solution" + problem_number)
-  let problem_label = label("problem" + problem_number)
-
-  // Update the solutions state with the new solution
-  solutions.update(existing => {
-    existing + (
-      (
-        problem_counter: problem_counter,
-        label: solution_label,
-        prob_label: problem_label,
-        body: body,
-      ),
-    )
-  })
-}
-
-// Function to render all solutions
-#let make-solutions() = context {
-  let all_solutions = solutions.get() // Retrieve all stored solutions
-  let hc = counter(heading).get().at(0)
-  if all_solutions.len() == 0 {
-    "No solutions available."
-  } else {
-    let block_args = arguments(
-      width: 100%, inset: 0.0em, radius: 0.0em,
-      breakable: false, fill: none
-    )
-    let pad_args = arguments(top: 0.0em, bottom: 0.0em)
-    let solution_env = content => {
-      pad(..pad_args, block(..block_args, content))
-    }
-      // Iterate over each solution and generate its contents.
-      all_solutions.map(sol => {
-
-        // Format solution number array as a string
-        let number = numbering("1.1", ..sol.problem_counter) 
-        let prob_label = "problem" + number // Associated problem label
-        let prob_link = [] // Placeholder for a link to the problem
-        
-        let q = prob_label in questions.get().keys()
-        if q {
-          let loc = questions.get().at(prob_label) // Retrieve problem location
-          prob_link = link(loc)[_see page #loc.page() for prompt_]
-        }
-        let result = []
-        let pass = false
-        if sol.problem_counter.at(0) == hc {
-          result = solution_env[
-            *Solution #number* (#prob_link)\
-            #sol.body\
-            #sol.label
-          ]
-          pass = true
-        }
-        result
-  }).join()
+  // Format the question
+  let q = args.at(0)
+  // let result = []
+  let box-env = content => box[#content]
+  if long {box-env = content => qbox[#content]}
+  
+  let result = box-env[#q <question>]
+  result = result + context {
+    let nb = thmcounters.get().at("latest")
+    let meta = [#metadata((none, nb)) <answer>]
+    if args.pos().len() > 1 {meta = [#metadata((args.at(1), nb)) <answer>]}
+    meta
+    // result = result + meta
+    // return result
   }
+
+  // result = result + context {
+
+  // }
+
+  // // Store the answer as metadata, if the solution is supplied.
+  // if args.pos().len() > 1 {
+  //   let a = args.at(1)
+  //   result = result + context {
+  //   let nb = thmcounters.get().at("latest")
+  //   [
+  //     #metadata((a, nb)) <answer>
+  //   ]
+  // }
+  // } else {
+  //   result = result + context {
+  //   let nb = thmcounters.get().at("latest")
+  //   [
+  //     #metadata((none, nb)) <answer>
+  //   ]
+  // }
+  // }
+  return figure(
+      result,
+      kind: "thmenv",
+      outlined: false,
+      supplement: [],
+      numbering: "1.1",
+    )
+};
+
+// Render the solutions
+#let solutions() = context {
+
+    // Get the current chapter
+    let section-start = query(selector(heading.where(level:1)).before(here())).last().location()
+
+    // Get the headings that are defined after
+    let sections-after = query(selector(heading.where(level:1)).after(here()))
+
+    // Find all the questions which are defined after current chapter
+    //  Note: this includes subsequent chapters too, if this isn't the
+    //  final chapter
+    let sel = selector(<question>).after(section-start)
+    if sections-after.len() > 0 {
+        sel = sel.before(sections-after.first().location())
+    }
+
+    let result = for question in query(sel) {
+        let aq = query(selector(<answer>).after(question.location()))
+        if aq.len() > 0 {
+          let answer = aq.first()
+          let nb = numbering("1.1", ..answer.value.at(1))
+          if answer.value.at(0) != none {
+            let prompt_link = link(question.location(), [(_Prompt on page #question.location().page()_)])
+            let answer_block = block(inset:5pt)[
+              #answer.value.at(0)
+            ]
+            block[ 
+              *Solution #nb:* #prompt_link \
+              #answer_block
+              #line(start:(0pt + 2%, 0pt + 0%), end:(0pt + 98%, 0pt + 0%), stroke: 0.4pt + black)
+            ]
+          } else {[]}
+        }
+    }
+  result
 }
+
+// Function for referencing problems
+#let pref(lab) = context {
+  // Problems can be referenced in the following way:
+  // #question[content] <q:label> 
+  // #pref(<q:label>)
+  let sel = query(selector(<question>).after(lab)).first().location()
+  let nb = thmcounters.at(sel).at("latest")
+
+  // Output formatting
+  link(lab, "problem " + numbering("1.1", ..nb))
+}
+
+// Capitalised verison of pref
+#let Pref(lab) = context {
+
+  // Selector for some reason needs to find the first match after the label.
+  let sel = query(selector(<question>).after(lab)).first().location()
+  let nb = thmcounters.at(sel).at("latest")
+
+  // Format output
+  link(lab, "Problem " + numbering("1.1", ..nb))
+}
+

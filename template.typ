@@ -44,11 +44,11 @@
   #show heading.where(level:1): it => [
     #let indent = {h((counter(heading).get().len() - 1) * 0.5em)}
     #indent
-    #set block(above: 1.4em, below: 1em)
+    #set block(above: 1.4em, below: 1.4em)
     #set text(font: "Arial")
     #counter(heading).display() #h(0.5em)
     #it.body
-    #counter(math.equation).update(0)\
+    #counter(math.equation).update(0)
   ]
   #show heading.where(level:2): it => [
     #let indent = {h((counter(heading).get().len() - 1) * 0.5em)}
@@ -59,5 +59,6 @@
     #it.body
     #counter(math.equation).update(0)
   ]
+  #show heading: set block(sticky: true)
   #doc
 ]
