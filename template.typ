@@ -32,7 +32,7 @@
   #show: equate.with(breakable: true, sub-numbering: true)
   #set math.equation(numbering: eq-number)
   #set page(margin: 1in)
-  #set par(justify: true)
+  #set par(justify: true, first-line-indent: 0em)
   #set text(font: "Latin Modern Roman", size:11pt)
   #set heading(numbering: "1.1")
 
@@ -43,6 +43,7 @@
   // Reset equation counter to 1 each time you create a heading or subheading
   #show heading.where(level:1): it => [
     #let indent = {h((counter(heading).get().len() - 1) * 0.5em)}
+    #set par(first-line-indent: 0em)
     #indent
     #set block(above: 1.4em, below: 1.4em)
     #set text(font: "Arial")
@@ -51,6 +52,15 @@
     #counter(math.equation).update(0)
   ]
   #show heading.where(level:2): it => [
+    #let indent = {h((counter(heading).get().len() - 1) * 0.5em)}
+    #indent
+    // #set block(above: 1.4em, below: 1em)
+    #set text(font: "Arial", size:12pt)
+    #counter(heading).display() #h(0.5em)
+    #it.body
+    #counter(math.equation).update(0)
+  ]
+  #show heading.where(level:3): it => [
     #let indent = {h((counter(heading).get().len() - 1) * 0.5em)}
     #indent
     // #set block(above: 1.4em, below: 1em)
