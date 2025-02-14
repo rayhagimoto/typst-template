@@ -18,8 +18,9 @@
 #let pd = $diff$
 
 // Probability shorthands
-#let Cov = $"Cov"$
-#let Var = $"Var"$
+#let Cov = $op("Cov")$
+#let Var = $op("Var")$
+#let Corr = $op("Corr")$
 
 // Colors
 #let cyan = rgb("#66ccff50")
