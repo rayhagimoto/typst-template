@@ -35,8 +35,10 @@
 
 // ----------------- References ----------------
 
-#let eref(label) = [eq. #ref(label)]
-#let Eref(label) = [Eq. #ref(label)]
+#let eref(label) = [eq.~#ref(label)]
+#let Eref(label) = [Eq.~#ref(label)]
+#let sref(label) = [sec.~#ref(label)]
+#let Sref(label) = [Sec.~#ref(label)]
 
 // ----------------- Title ----------------------
 
